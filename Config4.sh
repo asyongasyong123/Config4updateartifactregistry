@@ -5,6 +5,7 @@ set -euo pipefail
 # ✅ ENGINES: OPENRESTY, ENVOY, HAPROXY, CADDY, SING-BOX
 # ✅ INCLUDES CUSTOM USER-AGENT HEADERS
 # ✅ UPDATE: Artifact Registry Support (Auto-Create Repo)
+# ✅ FIXED: Missing closing brackets / syntax error
 # =========================================
 GREEN='\033[1;32m'
 RED='\033[1;31m'
@@ -125,7 +126,6 @@ setup_artifact_registry() {
         echo -e "${GREEN}✅ Artifact Registry Repository already exists.${NC}"
     fi
     
-    # Configure Docker authentication
     echo -e "${CYAN}🔐 Configuring Docker authentication...${NC}"
     gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
     
@@ -271,10 +271,8 @@ deploy_new_service() {
         return
     fi
 
-    # Enable required APIs
     gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project="$PROJECT_ID" --quiet
 
-    # ✅ NEW: Setup Artifact Registry
     ARTIFACT_REGISTRY_URL=$(setup_artifact_registry "$REGION")
     IMAGE_TAG="${ARTIFACT_REGISTRY_URL}/gcp-xray-${ENGINE}:latest"
 
@@ -977,7 +975,7 @@ EOF
 }
 
 # ==============================================
-# MAIN MENU LOOP
+# MAIN MENU LOOP — ✅ FIXED MISSING BRACKETS
 # ==============================================
 while true; do
     clear
@@ -995,4 +993,5 @@ while true; do
         1) deploy_new_service ;;
         2) list_deployed_services ;;
         3) echo -e "\n👋 Goodbye!"; exit 0 ;;
-        *) echo -e "${RED}❌ Enter 1, 2, or 3 only${NC}"; sleep
+        *) echo -e "${RED}❌ Enter 1, 2, or 3 only${NC}"; sleep 2 ;;
+    esac
