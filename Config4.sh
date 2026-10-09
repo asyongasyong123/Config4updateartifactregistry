@@ -273,9 +273,6 @@ deploy_new_service() {
 
     gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project="$PROJECT_ID" --quiet
 
-    ARTIFACT_REGISTRY_URL=$(setup_artifact_registry "$REGION")
-    IMAGE_TAG="${ARTIFACT_REGISTRY_URL}/gcp-xray-${ENGINE}:latest"
-
     echo -e "\n${CYAN}=========================================${NC}"
     echo -e "${GREEN} CHOOSE PROXY ENGINE${NC}"
     echo -e "${CYAN}=========================================${NC}"
@@ -296,6 +293,9 @@ deploy_new_service() {
             *) echo -e "${RED}Enter 1, 2, 3, 4, or 5 only${NC}" ;;
         esac
     done
+
+    ARTIFACT_REGISTRY_URL=$(setup_artifact_registry "$REGION")
+    IMAGE_TAG="${ARTIFACT_REGISTRY_URL}/gcp-xray-${ENGINE}:latest"
 
     RAND=$(openssl rand -hex 3)
     CLOUD_RUN_SERVICE_NAME="gcp-xray-${ENGINE}-$RAND"
@@ -975,7 +975,7 @@ EOF
 }
 
 # ==============================================
-# MAIN MENU LOOP — ✅ FIXED MISSING BRACKETS
+# MAIN MENU LOOP
 # ==============================================
 while true; do
     clear
@@ -995,3 +995,4 @@ while true; do
         3) echo -e "\n👋 Goodbye!"; exit 0 ;;
         *) echo -e "${RED}❌ Enter 1, 2, or 3 only${NC}"; sleep 2 ;;
     esac
+done
