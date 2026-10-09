@@ -5,7 +5,7 @@ set -euo pipefail
 # ✅ ENGINES: OPENRESTY, ENVOY, HAPROXY, CADDY, SING-BOX
 # ✅ INCLUDES CUSTOM USER-AGENT HEADERS
 # ✅ UPDATE: Artifact Registry Support (Auto-Create Repo)
-# ✅ FIXED: Missing closing brackets & Invalid Image Tag Output
+# ✅ FIXED: Invalid image tag output & clean stderr logging
 # =========================================
 GREEN='\033[1;32m'
 RED='\033[1;31m'
@@ -105,32 +105,31 @@ install_supervisord() {
 }
 
 # ==============================================
-# ✅ FIXED: ARTIFACT REGISTRY SETUP (Redirected logs to stderr)
+# ✅ FULLY FIXED: ARTIFACT REGISTRY SETUP
 # ==============================================
 setup_artifact_registry() {
-    local REGION="$1"
+    local TARGET_REGION="$1"
     PROJECT_ID="$(gcloud config get-value project 2>/dev/null)"
     REPO_NAME="xray-images"
     
-    echo -e "\n${CYAN}📦 Checking Artifact Registry Repository...${NC}" >&2
+    echo -e "\n${CYAN}📦 Checking Artifact Registry Repository...${NC}"
     
-    if ! gcloud artifacts repositories describe "$REPO_NAME" --location="$REGION" --project="$PROJECT_ID" &>/dev/null; then
-        echo -e "${YELLOW}⚠️ Repository not found. Creating: $REPO_NAME in $REGION...${NC}" >&2
+    if ! gcloud artifacts repositories describe "$REPO_NAME" --location="$TARGET_REGION" --project="$PROJECT_ID" &>/dev/null; then
+        echo -e "${YELLOW}⚠️ Repository not found. Creating: $REPO_NAME in $TARGET_REGION...${NC}"
         gcloud artifacts repositories create "$REPO_NAME" \
             --repository-format=docker \
-            --location="$REGION" \
+            --location="$TARGET_REGION" \
             --project="$PROJECT_ID" \
-            --quiet >&2
-        echo -e "${GREEN}✅ Artifact Registry Repository created!${NC}" >&2
+            --quiet
+        echo -e "${GREEN}✅ Artifact Registry Repository created!${NC}"
     else
-        echo -e "${GREEN}✅ Artifact Registry Repository already exists.${NC}" >&2
+        echo -e "${GREEN}✅ Artifact Registry Repository already exists.${NC}"
     fi
     
-    echo -e "${CYAN}🔐 Configuring Docker authentication...${NC}" >&2
-    gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet >&2
+    echo -e "${CYAN}🔐 Configuring Docker authentication...${NC}"
+    gcloud auth configure-docker "${TARGET_REGION}-docker.pkg.dev" --quiet
     
-    # Kani ra ang dapat nga ma-print sa stdout
-    echo "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}"
+    ARTIFACT_REGISTRY_URL="${TARGET_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}"
 }
 
 # ==============================================
@@ -294,7 +293,8 @@ deploy_new_service() {
         esac
     done
 
-    ARTIFACT_REGISTRY_URL=$(setup_artifact_registry "$REGION")
+    # Directly sets $ARTIFACT_REGISTRY_URL without capturing echo output
+    setup_artifact_registry "$REGION"
     IMAGE_TAG="${ARTIFACT_REGISTRY_URL}/gcp-xray-${ENGINE}:latest"
 
     RAND=$(openssl rand -hex 3)
